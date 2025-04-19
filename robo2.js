@@ -38,43 +38,33 @@ class GerenciadorEstado {
         this.conversasFinalizadas = new Set();
         this.processandoMensagem = new Map(); // Novo: Rastrear se uma mensagem está sendo processada
     }
-
     estaProcessando(idUsuario) {
         return this.processandoMensagem.get(idUsuario) || false;
     }
-
     iniciarProcessamento(idUsuario) {
         this.processandoMensagem.set(idUsuario, true);
     }
-
     finalizarProcessamento(idUsuario) {
         this.processandoMensagem.set(idUsuario, false);
     }
-
     obterEstadoUsuario(idUsuario) {
         return this.estadosUsuario.get(idUsuario);
     }
-
     definirEstadoUsuario(idUsuario, estado) {
         this.estadosUsuario.set(idUsuario, estado);
     }
-
     mensagemJaEnviada(idUsuario, estagio) {
         return this.mensagensEnviadas.get(`${idUsuario}-${estagio}`);
     }
-
     marcarMensagemEnviada(idUsuario, estagio) {
         this.mensagensEnviadas.set(`${idUsuario}-${estagio}`, true);
     }
-
     conversaFinalizada(idUsuario) {
         return this.conversasFinalizadas.has(idUsuario);
     }
-
     finalizarConversa(idUsuario) {
         this.conversasFinalizadas.add(idUsuario);
     }
-
     limparEstadoUsuario(idUsuario) {
         this.estadosUsuario.delete(idUsuario);
         this.mensagensEnviadas.delete(idUsuario);
@@ -87,7 +77,6 @@ class GerenciadorMidia {
     constructor(logger) {
         this.logger = logger;
     }
-
     async enviarMidia(client, msg, caminhoMidia, opcoes = {}) {
         try {
             if (!fs.existsSync(caminhoMidia)) {
@@ -101,7 +90,6 @@ class GerenciadorMidia {
             throw erro;
         }
     }
-
     async enviarMultiplosVideos(client, msg, caminhoVideos, delayEntre = config.delays.entreVideos) {
         for (const caminhoVideo of caminhoVideos) {
             try {
@@ -247,13 +235,30 @@ class WhatsAppBot {
             // Marcar que está processando esta mensagem
             this.gerenciadorEstado.iniciarProcessamento(idUsuario);
 
-            // Processar qualquer tipo de mensagem como resposta válida
-            if (!this.gerenciadorEstado.obterEstadoUsuario(idUsuario)) {
-                this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'initial');
-                await this.processarProximoEstagio(idUsuario, msg, 'initial');
+            // Verificar se a mensagem contém palavras-chave sobre onde você mora
+            const mensagemTexto = msg.body.toLowerCase();
+            const palavrasChaveLocalizacao = ['onde', 'moras', 'mora', 'joão pessoa', 'pb'];
+            const ehPerguntaSobreLocalizacao = palavrasChaveLocalizacao.some(palavra => mensagemTexto.includes(palavra));
+
+            if (ehPerguntaSobreLocalizacao) {
+                await this.responderSobreLocalizacao(msg);
             } else {
-                const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
-                await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
+                // Verificar se a mensagem contém palavras-chave sobre encontros ou sair
+                const palavrasChaveEncontro = ['encontro', 'sair', 'conhecer', 'encontrar'];
+                const ehPerguntaSobreEncontro = palavrasChaveEncontro.some(palavra => mensagemTexto.includes(palavra));
+
+                if (ehPerguntaSobreEncontro) {
+                    await this.responderSobreEncontro(msg);
+                } else {
+                    // Processar qualquer tipo de mensagem como resposta válida
+                    if (!this.gerenciadorEstado.obterEstadoUsuario(idUsuario)) {
+                        this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'initial');
+                        await this.processarProximoEstagio(idUsuario, msg, 'initial');
+                    } else {
+                        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
+                        await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
+                    }
+                }
             }
 
             // Finalizar o processamento da mensagem
@@ -276,49 +281,47 @@ class WhatsAppBot {
         }
     }
 
-async processarEstagio(idUsuario, msg, chat, estagio) {
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    try {
-        switch (estagio) {
-            case 'initial':
-                await this.processarEstagioInicial(idUsuario, msg, chat);
-                break;
-            case 'waiting_preview':
-                await this.processarEstagioPreview(idUsuario, msg, chat);
-                break;
-            case 'waiting_promise':
-                await this.processarEstagioPromise(idUsuario, msg, chat);
-                break;
-            case 'waiting_for_price_response':
-                await this.processarEstagioPriceResponse(idUsuario, msg, chat);
-                break;
-            case 'waiting_final_promise':
-                await this.processarEstagioFinalPromise(idUsuario, msg, chat);
-                break;
-            case 'sending_link':
-                await this.processarEstagioSendingLink(idUsuario, msg, chat);
-                break;
-            case 'waiting_before_audio7':
-                await this.processarEstagioBeforeAudio7(idUsuario, msg, chat);
-                break;
-            case 'waiting_before_audio6':
-                await this.processarEstagioBeforeAudio6(idUsuario, msg, chat);
-                break;
-            case 'waiting_before_audiofinal':
-                await this.processarRespostaUsuarioBeforeAudiofinal(idUsuario, msg, chat);
-                break;
-            case 'waiting_after_audiofinal':
-                await this.processarEstagioAfterAudiofinal(idUsuario, msg, chat);
-                break;
-            default:
-                this.logger.error(`Estado desconhecido: ${estagio}`);
-                this.gerenciadorEstado.limparEstadoUsuario(idUsuario);
-                break;
+    async processarEstagio(idUsuario, msg, chat, estagio) {
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        try {
+            switch (estagio) {
+                case 'initial':
+                    await this.processarEstagioInicial(idUsuario, msg, chat);
+                    break;
+                case 'waiting_preview':
+                    await this.processarEstagioPreview(idUsuario, msg, chat);
+                    break;
+                case 'waiting_promise':
+                    await this.processarEstagioPromise(idUsuario, msg, chat);
+                    break;
+                case 'waiting_for_price_response':
+                    await this.processarEstagioPriceResponse(idUsuario, msg, chat);
+                    break;
+                case 'waiting_final_promise':
+                    await this.processarEstagioFinalPromise(idUsuario, msg, chat);
+                    break;
+                case 'sending_link':
+                    await this.processarEstagioSendingLink(idUsuario, msg, chat);
+                    break;
+                case 'waiting_before_audio6':
+                    await this.processarEstagioBeforeAudio6(idUsuario, msg, chat);
+                    break;
+                case 'waiting_before_audiofinal':
+                    await this.processarRespostaUsuarioBeforeAudiofinal(idUsuario, msg, chat);
+                    break;
+                case 'waiting_after_audiofinal':
+                    await this.processarEstagioAfterAudiofinal(idUsuario, msg, chat);
+                    break;
+                default:
+                    this.logger.error(`Estado desconhecido: ${estagio}`);
+                    this.gerenciadorEstado.limparEstadoUsuario(idUsuario);
+                    break;
+            }
+        } catch (erro) {
+            this.logger.error('Erro ao processar o estágio:', erro);
         }
-    } catch (erro) {
-        this.logger.error('Erro ao processar o estágio:', erro);
     }
-}
+
     async processarEstagioInicial(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'initial');
@@ -424,24 +427,6 @@ async processarEstagio(idUsuario, msg, chat, estagio) {
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Me promete que não vai me deixar gozar sozinha né?');
-        this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_before_audio7');
-    }
-
-    async processarEstagioBeforeAudio7(idUsuario, msg, chat) {
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-        await delay(5000);
-        this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_before_audio7');
-        await chat.sendStateTyping();
-        await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Vou deixar por um valor bem baixo só para você meu bb');
-        await delay(config.delays.digitacao);
-        await chat.sendStateTyping();
-        await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Mas só porque eu gostei muito de você viu..🥰');
-        await delay(config.delays.digitacao);
-        await chat.sendStateTyping();
-        await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Promete que vai comprar amor?');
         this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_before_audio6');
     }
 
@@ -481,29 +466,72 @@ async processarEstagio(idUsuario, msg, chat, estagio) {
     async processarRespostaUsuarioBeforeAudiofinal(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_before_audiofinal');
-
         // Registrar o tipo de mensagem recebida
         this.logger.info(`Usuário ${idUsuario} respondeu com tipo: ${msg.type}`);
-
         // Avançar para o próximo estado, independentemente do tipo de mensagem
         this.logger.info(`Usuário ${idUsuario} respondeu. Avançando para o estado waiting_after_audiofinal`);
         this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_after_audiofinal');
         await this.processarProximoEstagio(idUsuario, msg, 'waiting_after_audiofinal');
     }
-    async processarEstagioAfterAudiofinal(idUsuario, msg, chat) {
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_after_audiofinal');
-    await delay(30000);
-    await chat.sendStateTyping();
-    await delay(config.delays.digitacao);
-    await this.client.sendMessage(msg.from, 'Tá em dúvida ainda bb? Olha o que os pagantes falam…');
-    await delay(11000);
-    await this.gerenciadorMidia.enviarMidia(this.client, msg, './foto1.jpg', { sendMediaAsPhoto: true });
 
-    // Finalizar a conversa aqui
-    this.gerenciadorEstado.finalizarConversa(idUsuario);
-    this.gerenciadorEstado.limparEstadoUsuario(idUsuario);
-    this.logger.info(`Conversa finalizada para o usuário ${idUsuario}`);
+    async processarEstagioAfterAudiofinal(idUsuario, msg, chat) {
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_after_audiofinal');
+        await delay(30000);
+        await chat.sendStateTyping();
+        await delay(config.delays.digitacao);
+        await this.client.sendMessage(msg.from, 'Tá em dúvida ainda bb? Olha o que os pagantes falam…');
+        await delay(11000);
+        await this.gerenciadorMidia.enviarMidia(this.client, msg, './foto1.jpg', { sendMediaAsPhoto: true });
+        // Finalizar a conversa aqui
+        this.gerenciadorEstado.finalizarConversa(idUsuario);
+        this.gerenciadorEstado.limparEstadoUsuario(idUsuario);
+        this.logger.info(`Conversa finalizada para o usuário ${idUsuario}`);
+    }
+
+    async responderSobreLocalizacao(msg) {
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const chat = await msg.getChat();
+
+        await chat.sendStateTyping();
+        await delay(config.delays.digitacao);
+
+        await this.client.sendMessage(
+            msg.from,
+            'Eu moro em João Pessoa, PB! 😊✨'
+        );
+
+        this.logger.info(`Resposta sobre localização enviada para ${msg.from}`);
+
+        // Retomar o estado anterior do funil
+        const idUsuario = msg.from;
+        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
+        if (estadoAtual) {
+            await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
+        }
+    }
+
+    async responderSobreEncontro(msg) {
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const chat = await msg.getChat();
+
+        await chat.sendStateTyping();
+        await delay(config.delays.digitacao);
+
+        await this.client.sendMessage(
+            msg.from,
+            'Amor... encontro não rola. Sou tua namoradinha virtual, só na putaria online 😘\n\n' +
+            'Mas te garanto que numa chamada vou te deixar tão maluco que nem vai querer sair de casa 🤤'
+        );
+
+        this.logger.info(`Resposta sobre encontro enviada para ${msg.from}`);
+
+        // Retomar o estado anterior do funil
+        const idUsuario = msg.from;
+        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
+        if (estadoAtual) {
+            await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
+        }
     }
 
     async tentarReconexao(motivo) {
