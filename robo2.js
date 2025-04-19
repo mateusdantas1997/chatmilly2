@@ -336,7 +336,7 @@ class WhatsAppBot {
         await delay(config.delays.digitacao);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Você tá no lugar certo pra sair com a cabeça leve e o pau duro… quer só olhar ou vai brincar comigo de verdade?');
+        await this.client.sendMessage(msg.from, 'Você tá no lugar certo pra sair com a cabeça leve e o pau duro… vc tem interesse bb?😈');
         this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_preview');
     }
 
@@ -439,10 +439,6 @@ class WhatsAppBot {
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './audio9.aac', { sendAudioAsVoice: true });
         await delay(11000);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './foto.jpg', { sendMediaAsPhoto: true });
-        await delay(config.delays.digitacao);
-        await chat.sendStateTyping();
-        await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, ' Agora é com vc meu safado, escolha um dos pacotes');
         await delay(11000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
@@ -459,7 +455,7 @@ class WhatsAppBot {
         await this.client.sendMessage(msg.from, '84996180282');
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Me avisa quando enviar o pix, que te dou o melhor conteúdo da noite e me solto de verdade… e ainda te mostro tudo sem censura😈');   
+        await this.client.sendMessage(msg.from, 'Me avisa quando enviar o pix, que te dou o meu melhor conteúdo e me solto de verdade pra vc… e ainda te mostro tudo sem censura😈');   
         this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_before_audiofinal');
     }
 
