@@ -423,7 +423,7 @@ async processarEstagio(idUsuario, msg, chat, estagio) {
         await delay(config.delays.digitacao);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Me promete que não vai me deixar gozar sozinha né?);
+        await this.client.sendMessage(msg.from, 'Me promete que não vai me deixar gozar sozinha né?');
         this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_before_audio7');
     }
 
