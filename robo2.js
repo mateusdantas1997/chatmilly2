@@ -486,49 +486,55 @@ class WhatsAppBot {
     }
 
     async responderSobreLocalizacao(msg) {
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-        const chat = await msg.getChat();
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const chat = await msg.getChat();
 
-        await chat.sendStateTyping();
-        await delay(config.delays.digitacao);
+    // Enviar estado de digitação
+    await chat.sendStateTyping();
+    await delay(config.delays.digitacao);
 
-        await this.client.sendMessage(
-            msg.from,
-            'Eu moro em João Pessoa, PB! 😊✨'
-        );
+    // Adicionar um delay adicional de 11 segundos antes de enviar a mensagem
+    await delay(11000);
 
-        this.logger.info(`Resposta sobre localização enviada para ${msg.from}`);
+    // Enviar a mensagem sobre localização
+    await this.client.sendMessage(
+        msg.from,
+        'Eu moro em João Pessoa, PB! 😊'
+    );
 
-        // Retomar o estado anterior do funil
-        const idUsuario = msg.from;
-        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
-        if (estadoAtual) {
-            await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
-        }
+    this.logger.info(`Resposta sobre localização enviada para ${msg.from}`);
+
+    // Retomar o estado anterior do funil
+    const idUsuario = msg.from;
+    const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
+    if (estadoAtual) {
+        await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
     }
-
+    }
     async responderSobreEncontro(msg) {
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms)); // Função de delay
         const chat = await msg.getChat();
+        await chat.sendStateTyping(); // Envia o estado de "digitando..."
+        await delay(config.delays.digitacao); // Aguarda o tempo de digitação configurado (11 segundos)
 
-        await chat.sendStateTyping();
-        await delay(config.delays.digitacao);
-
+    // Adiciona um delay de 11 segundos antes de enviar a mensagem
+        await delay(11000);
+        
         await this.client.sendMessage(
-            msg.from,
-            'Amor... encontro não rola. Sou tua namoradinha virtual, só na putaria online 😘\n\n' +
-            'Mas te garanto que numa chamada vou te deixar tão maluco que nem vai querer sair de casa 🤤'
-        );
+        msg.from,
+        'Amor... encontro não rola. Sou tua namoradinha virtual, só na putaria online 😘\n\n' +
+        'Mas te garanto que numa chamada vou te deixar tão maluco que nem vai querer sair de casa 🤤'
+    );
 
-        this.logger.info(`Resposta sobre encontro enviada para ${msg.from}`);
+    this.logger.info(`Resposta sobre encontro enviada para ${msg.from}`);
 
-        // Retomar o estado anterior do funil
-        const idUsuario = msg.from;
-        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
-        if (estadoAtual) {
-            await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
-        }
+    // Retomar o estado anterior do funil
+    const idUsuario = msg.from;
+    const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
+    if (estadoAtual) {
+        await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
     }
+}
 
     async tentarReconexao(motivo) {
         let tentativas = 0;
