@@ -450,9 +450,9 @@ class WhatsAppBot {
         this.logger.info('Link enviado.');
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'MINHA CHAVE PIX É MEU CELULAR : 👇🏼👇🏼 ');
+        await this.client.sendMessage(msg.from, 'MINHA CHAVE PIX É MEU EMAIL : 👇🏼👇🏼 ');
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, '84996180282');
+        await this.client.sendMessage(msg.from, 'millynhavanessa@outlook.com');
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Me avisa quando enviar o pix, que te dou o meu melhor conteúdo e me solto de verdade pra vc… e ainda te mostro tudo sem censura😈');   
