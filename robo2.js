@@ -7,10 +7,10 @@ const path = require('path');
 // Configuration
 const config = {
     delays: {
-        entreVideos: 11000,
-        entreAudios: 11000,
-        digitacao: 11000, // Tempo de digitação ajustado para 2 segundos
-        gravacao: 11000   // Tempo de gravação ajustado para 11 segundos
+        entreVideos: 30000,
+        entreAudios: 30000,
+        digitacao: 30000, // Tempo de digitação ajustado para 2 segundos
+        gravacao: 30000   // Tempo de gravação ajustado para 11 segundos
     },
     limites: {
         tentativasReconexao: 5,
@@ -325,11 +325,11 @@ class WhatsAppBot {
     async processarEstagioInicial(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'initial');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Oii amor, que bom que vc me chamou❤️');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './audio1.aac', { sendAudioAsVoice: true });
@@ -343,18 +343,18 @@ class WhatsAppBot {
     async processarEstagioPreview(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_preview');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Hmm, vou te mandar um gostinho… mas só um pouco, pra te deixar maluco');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Quero ver se vc aguenta mesmo ou vai gozar só com a amostra rsrs');
         await delay(config.delays.entreVideos);
         const videos = ['./video1.mp4', './video2.mp4'];
         await this.gerenciadorMidia.enviarMultiplosVideos(this.client, msg, videos);
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './audio4.aac', { sendAudioAsVoice: true });
@@ -364,11 +364,11 @@ class WhatsAppBot {
     async processarEstagioPromise(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_promise');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Imagina isso bem pertinho de vc..🔥');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Se tu estivesse aqui, já tava lambendo tudo, né?🤤');
@@ -385,23 +385,23 @@ class WhatsAppBot {
     async processarEstagioFinalPromise(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_final_promise');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Vc é bem safadinho, agora fiquei louca rsrs');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Vou te mandar um áudio agora me tocando só pra você meu bb');
-        await delay(20000);
+        await delay(30000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './audio6.aac', { sendAudioAsVoice: true });
-        await delay(5000);
+        await delay(30000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './audio7.aac', { sendAudioAsVoice: true });
-        await delay(5000);
+        await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Fiquei toda molhadinha, quer ver?');
@@ -411,7 +411,7 @@ class WhatsAppBot {
     async processarEstagioSendingLink(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'sending_link');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './audio8.aac', { sendAudioAsVoice: true });
@@ -433,13 +433,13 @@ class WhatsAppBot {
     async processarEstagioBeforeAudio6(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_before_audio6');
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './audio9.aac', { sendAudioAsVoice: true });
-        await delay(11000);
+        await delay(30000);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './foto.jpg', { sendMediaAsPhoto: true });
-        await delay(11000);
+        await delay(30000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './audio12.aac', { sendAudioAsVoice: true });
@@ -477,7 +477,7 @@ class WhatsAppBot {
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'Tá em dúvida ainda bb? Olha o que os pagantes falam…');
-        await delay(11000);
+        await delay(30000);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './foto1.jpg', { sendMediaAsPhoto: true });
         // Finalizar a conversa aqui
         this.gerenciadorEstado.finalizarConversa(idUsuario);
@@ -518,7 +518,7 @@ class WhatsAppBot {
         await delay(config.delays.digitacao); // Aguarda o tempo de digitação configurado (11 segundos)
 
     // Adiciona um delay de 11 segundos antes de enviar a mensagem
-        await delay(11000);
+        await delay(30000);
         
         await this.client.sendMessage(
         msg.from,
