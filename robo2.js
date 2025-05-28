@@ -328,7 +328,7 @@ class WhatsAppBot {
         await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Oii amor, que bom que vc me chamou❤️');
+        await this.client.sendMessage(msg.from, 'Até que enfim me chamou, hein? Já tava na tua espera ❤️');
         await delay(30000);
         await chat.sendStateRecording();
         await delay(config.delays.gravacao);
@@ -336,7 +336,7 @@ class WhatsAppBot {
         await delay(config.delays.digitacao);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Você tá no lugar certo pra sair com a cabeça leve e o pau duro… vc tem interesse bb?😈');
+        await this.client.sendMessage(msg.from, 'Vc tem interesse bb?🤭');
         this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_preview');
     }
 
@@ -346,7 +346,7 @@ class WhatsAppBot {
         await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Hmm, vou te mandar um gostinho… mas só um pouco, pra te deixar maluco');
+        await this.client.sendMessage(msg.from, 'Hmm, vou te mandar um gostinho… mas só um pouco, pra te deixar curioso');
         await delay(30000);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
@@ -418,7 +418,7 @@ class WhatsAppBot {
         await delay(config.delays.digitacao);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Bb, tenho só 2 vagas no meu grupinho secreto hoje…');
+        await this.client.sendMessage(msg.from, 'Bb, quero ser sua namoradinha e vou te dar uma presente...');
         await delay(config.delays.digitacao);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
@@ -446,11 +446,11 @@ class WhatsAppBot {
         await delay(config.delays.digitacao);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'https://abre.ai/millynhapix 👈🏼🥰');
+        await this.client.sendMessage(msg.from, 'https://abre.ai/millynhapix 💖');
         this.logger.info('Link enviado.');
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'MINHA CHAVE PIX É MEU EMAIL : 👇🏼👇🏼 ');
+        await this.client.sendMessage(msg.from, 'Meu Pix 💖👇🏻');
         await delay(config.delays.digitacao);
         await this.client.sendMessage(msg.from, 'millynhavanessa@outlook.com');
         await chat.sendStateTyping();
