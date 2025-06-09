@@ -38,33 +38,43 @@ class GerenciadorEstado {
         this.conversasFinalizadas = new Set();
         this.processandoMensagem = new Map(); // Novo: Rastrear se uma mensagem está sendo processada
     }
+
     estaProcessando(idUsuario) {
         return this.processandoMensagem.get(idUsuario) || false;
     }
+
     iniciarProcessamento(idUsuario) {
         this.processandoMensagem.set(idUsuario, true);
     }
+
     finalizarProcessamento(idUsuario) {
         this.processandoMensagem.set(idUsuario, false);
     }
+
     obterEstadoUsuario(idUsuario) {
         return this.estadosUsuario.get(idUsuario);
     }
+
     definirEstadoUsuario(idUsuario, estado) {
         this.estadosUsuario.set(idUsuario, estado);
     }
+
     mensagemJaEnviada(idUsuario, estagio) {
         return this.mensagensEnviadas.get(`${idUsuario}-${estagio}`);
     }
+
     marcarMensagemEnviada(idUsuario, estagio) {
         this.mensagensEnviadas.set(`${idUsuario}-${estagio}`, true);
     }
+
     conversaFinalizada(idUsuario) {
         return this.conversasFinalizadas.has(idUsuario);
     }
+
     finalizarConversa(idUsuario) {
         this.conversasFinalizadas.add(idUsuario);
     }
+
     limparEstadoUsuario(idUsuario) {
         this.estadosUsuario.delete(idUsuario);
         this.mensagensEnviadas.delete(idUsuario);
@@ -77,6 +87,7 @@ class GerenciadorMidia {
     constructor(logger) {
         this.logger = logger;
     }
+
     async enviarMidia(client, msg, caminhoMidia, opcoes = {}) {
         try {
             if (!fs.existsSync(caminhoMidia)) {
@@ -90,6 +101,7 @@ class GerenciadorMidia {
             throw erro;
         }
     }
+
     async enviarMultiplosVideos(client, msg, caminhoVideos, delayEntre = config.delays.entreVideos) {
         for (const caminhoVideo of caminhoVideos) {
             try {
@@ -234,22 +246,23 @@ class WhatsAppBot {
 
             // Marcar que está processando esta mensagem
             this.gerenciadorEstado.iniciarProcessamento(idUsuario);
-            } else {
-                // Verificar se a mensagem contém palavras-chave sobre encontros ou sair
-                const palavrasChaveEncontro = ['encontro', 'sair', 'conhecer', 'encontrar'];
-                const ehPerguntaSobreEncontro = palavrasChaveEncontro.some(palavra => mensagemTexto.includes(palavra));
 
-                if (ehPerguntaSobreEncontro) {
-                    await this.responderSobreEncontro(msg);
+            const mensagemTexto = msg.body.toLowerCase();
+
+            // Verificar se a mensagem contém palavras-chave sobre encontros ou sair
+            const palavrasChaveEncontro = ['encontro', 'sair', 'conhecer', 'encontrar'];
+            const ehPerguntaSobreEncontro = palavrasChaveEncontro.some(palavra => mensagemTexto.includes(palavra));
+
+            if (ehPerguntaSobreEncontro) {
+                await this.responderSobreEncontro(msg);
+            } else {
+                // Processar qualquer tipo de mensagem como resposta válida
+                if (!this.gerenciadorEstado.obterEstadoUsuario(idUsuario)) {
+                    this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'initial');
+                    await this.processarProximoEstagio(idUsuario, msg, 'initial');
                 } else {
-                    // Processar qualquer tipo de mensagem como resposta válida
-                    if (!this.gerenciadorEstado.obterEstadoUsuario(idUsuario)) {
-                        this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'initial');
-                        await this.processarProximoEstagio(idUsuario, msg, 'initial');
-                    } else {
-                        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
-                        await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
-                    }
+                    const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
+                    await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
                 }
             }
 
@@ -438,7 +451,7 @@ class WhatsAppBot {
         await delay(config.delays.digitacao);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'https://abre.ai/millynhapix 💖');
+        await this.client.sendMessage(msg.from, 'https://abre.ai/millynhapix  💖');
         this.logger.info('Link enviado.');
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
@@ -476,30 +489,27 @@ class WhatsAppBot {
         this.gerenciadorEstado.limparEstadoUsuario(idUsuario);
         this.logger.info(`Conversa finalizada para o usuário ${idUsuario}`);
     }
+
     async responderSobreEncontro(msg) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms)); // Função de delay
         const chat = await msg.getChat();
         await chat.sendStateTyping(); // Envia o estado de "digitando..."
         await delay(config.delays.digitacao); // Aguarda o tempo de digitação configurado (11 segundos)
-
-    // Adiciona um delay de 11 segundos antes de enviar a mensagem
         await delay(15000);
-        
         await this.client.sendMessage(
-        msg.from,
-        'Amor... encontro não rola. Sou tua namoradinha virtual, só na putaria online 😘\n\n' +
-        'Mas te garanto que numa chamada vou te deixar tão maluco que nem vai querer sair de casa 🤤'
-    );
+            msg.from,
+            'Amor... encontro não rola. Sou tua namoradinha virtual, só na putaria online 😘\n' +
+            'Mas te garanto que numa chamada vou te deixar tão maluco que nem vai querer sair de casa 🤤'
+        );
+        this.logger.info(`Resposta sobre encontro enviada para ${msg.from}`);
 
-    this.logger.info(`Resposta sobre encontro enviada para ${msg.from}`);
-
-    // Retomar o estado anterior do funil
-    const idUsuario = msg.from;
-    const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
-    if (estadoAtual) {
-        await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
+        // Retomar o estado anterior do funil
+        const idUsuario = msg.from;
+        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
+        if (estadoAtual) {
+            await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
+        }
     }
-}
 
     async tentarReconexao(motivo) {
         let tentativas = 0;
