@@ -234,14 +234,6 @@ class WhatsAppBot {
 
             // Marcar que está processando esta mensagem
             this.gerenciadorEstado.iniciarProcessamento(idUsuario);
-
-            // Verificar se a mensagem contém palavras-chave sobre onde você mora
-            const mensagemTexto = msg.body.toLowerCase();
-            const palavrasChaveLocalizacao = ['onde', 'moras', 'mora', 'joão pessoa', 'pb'];
-            const ehPerguntaSobreLocalizacao = palavrasChaveLocalizacao.some(palavra => mensagemTexto.includes(palavra));
-
-            if (ehPerguntaSobreLocalizacao) {
-                await this.responderSobreLocalizacao(msg);
             } else {
                 // Verificar se a mensagem contém palavras-chave sobre encontros ou sair
                 const palavrasChaveEncontro = ['encontro', 'sair', 'conhecer', 'encontrar'];
@@ -483,33 +475,6 @@ class WhatsAppBot {
         this.gerenciadorEstado.finalizarConversa(idUsuario);
         this.gerenciadorEstado.limparEstadoUsuario(idUsuario);
         this.logger.info(`Conversa finalizada para o usuário ${idUsuario}`);
-    }
-
-    async responderSobreLocalizacao(msg) {
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-    const chat = await msg.getChat();
-
-    // Enviar estado de digitação
-    await chat.sendStateTyping();
-    await delay(config.delays.digitacao);
-
-    // Adicionar um delay adicional de 11 segundos antes de enviar a mensagem
-    await delay(11000);
-
-    // Enviar a mensagem sobre localização
-    await this.client.sendMessage(
-        msg.from,
-        'Eu moro em João Pessoa, PB! 😊'
-    );
-
-    this.logger.info(`Resposta sobre localização enviada para ${msg.from}`);
-
-    // Retomar o estado anterior do funil
-    const idUsuario = msg.from;
-    const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
-    if (estadoAtual) {
-        await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
-    }
     }
     async responderSobreEncontro(msg) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms)); // Função de delay
