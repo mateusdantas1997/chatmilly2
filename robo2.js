@@ -9,8 +9,8 @@ const config = {
     delays: {
         entreVideos: 15000,
         entreAudios: 15000,
-        digitacao: 15000, // Tempo de digitação ajustado para 2 segundos
-        gravacao: 15000   // Tempo de gravação ajustado para 11 segundos
+        digitacao: 15000,
+        gravacao: 15000
     },
     limites: {
         tentativasReconexao: 5,
@@ -24,6 +24,7 @@ class Logger {
         const timestamp = new Date().toISOString();
         console.log(`[INFO][${timestamp}] ${mensagem}`);
     }
+
     error(mensagem, erro = '') {
         const timestamp = new Date().toISOString();
         console.error(`[ERROR][${timestamp}] ${mensagem} ${erro}`);
@@ -36,7 +37,8 @@ class GerenciadorEstado {
         this.estadosUsuario = new Map();
         this.mensagensEnviadas = new Map();
         this.conversasFinalizadas = new Set();
-        this.processandoMensagem = new Map(); // Novo: Rastrear se uma mensagem está sendo processada
+        this.processandoMensagem = new Map();
+        this.respostasEncontro = new Set(); // Para evitar resposta repetida
     }
 
     estaProcessando(idUsuario) {
@@ -79,6 +81,14 @@ class GerenciadorEstado {
         this.estadosUsuario.delete(idUsuario);
         this.mensagensEnviadas.delete(idUsuario);
         this.conversasFinalizadas.delete(idUsuario);
+    }
+
+    jaRespondeuSobreEncontro(idUsuario) {
+        return this.respostasEncontro.has(idUsuario);
+    }
+
+    marcarRespostaEncontro(idUsuario) {
+        this.respostasEncontro.add(idUsuario);
     }
 }
 
@@ -233,30 +243,30 @@ class WhatsAppBot {
             if (!msg.from.endsWith('@c.us')) return;
             const idUsuario = msg.from;
 
-            // Verificar se a conversa já foi finalizada
             if (this.gerenciadorEstado.conversaFinalizada(idUsuario)) {
                 return;
             }
 
-            // Verificar se já está processando uma mensagem para este usuário
             if (this.gerenciadorEstado.estaProcessando(idUsuario)) {
                 this.logger.info(`Mensagem ignorada para ${idUsuario}: já está sendo processada.`);
                 return;
             }
 
-            // Marcar que está processando esta mensagem
             this.gerenciadorEstado.iniciarProcessamento(idUsuario);
 
             const mensagemTexto = msg.body.toLowerCase();
 
-            // Verificar se a mensagem contém palavras-chave sobre encontros ou sair
             const palavrasChaveEncontro = ['encontro', 'sair', 'conhecer', 'encontrar'];
             const ehPerguntaSobreEncontro = palavrasChaveEncontro.some(palavra => mensagemTexto.includes(palavra));
 
             if (ehPerguntaSobreEncontro) {
-                await this.responderSobreEncontro(msg);
+                if (!this.gerenciadorEstado.jaRespondeuSobreEncontro(idUsuario)) {
+                    this.gerenciadorEstado.marcarRespostaEncontro(idUsuario);
+                    await this.responderSobreEncontro(msg);
+                } else {
+                    this.logger.info(`Já enviou resposta sobre encontro para ${idUsuario}`);
+                }
             } else {
-                // Processar qualquer tipo de mensagem como resposta válida
                 if (!this.gerenciadorEstado.obterEstadoUsuario(idUsuario)) {
                     this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'initial');
                     await this.processarProximoEstagio(idUsuario, msg, 'initial');
@@ -266,7 +276,6 @@ class WhatsAppBot {
                 }
             }
 
-            // Finalizar o processamento da mensagem
             this.gerenciadorEstado.finalizarProcessamento(idUsuario);
         } catch (erro) {
             this.logger.error('Erro no processamento de mensagem:', erro);
@@ -327,6 +336,48 @@ class WhatsAppBot {
         }
     }
 
+    async responderSobreEncontro(msg) {
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        const chat = await msg.getChat();
+        await chat.sendStateTyping();
+        await delay(config.delays.digitacao);
+        await this.client.sendMessage(
+            msg.from,
+            'Amor... encontro não rola. Só saio com quem é meu cliente e já assina meus conteúdos.\n' +
+            'Se você pegar o meu pacote exclusivo, a gente pode conversar… te garanto que numa chamada vou te deixar tão maluco que nem vai querer sair de casa 🤤'
+        );
+        this.logger.info(`Resposta sobre encontro enviada para ${msg.from}`);
+
+        const idUsuario = msg.from;
+        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
+        if (estadoAtual) {
+            await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
+        }
+    }
+
+    async tentarReconexao(motivo) {
+        let tentativas = 0;
+        const maxTentativas = config.limites.tentativasReconexao;
+        while (tentativas < maxTentativas) {
+            try {
+                this.logger.info(`Tentativa de reconexão ${tentativas + 1}/${maxTentativas}`);
+                await this.client.initialize();
+                this.logger.info('Reconectado com sucesso');
+                return;
+            } catch (erro) {
+                tentativas++;
+                this.logger.error(`Falha na tentativa de reconexão ${tentativas}:`, erro);
+                if (tentativas < maxTentativas) {
+                    const tempoEspera = 5000 * tentativas;
+                    await new Promise(resolve => setTimeout(resolve, tempoEspera));
+                }
+            }
+        }
+        this.logger.error('Máximo de tentativas de reconexão atingido. Reiniciando processo...');
+        process.exit(1);
+    }
+
+    // Estágios do Funil
     async processarEstagioInicial(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'initial');
@@ -451,7 +502,7 @@ class WhatsAppBot {
         await delay(config.delays.digitacao);
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'https://abre.ai/millynhapix  💖');
+        await this.client.sendMessage(msg.from, 'https://abre.ai/millynhapix   💖');
         this.logger.info('Link enviado.');
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
@@ -460,16 +511,14 @@ class WhatsAppBot {
         await this.client.sendMessage(msg.from, 'millynhavanessa@outlook.com');
         await chat.sendStateTyping();
         await delay(config.delays.digitacao);
-        await this.client.sendMessage(msg.from, 'Me avisa quando enviar o pix, que te dou o meu melhor conteúdo e me solto de verdade pra vc… e ainda te mostro tudo sem censura😈');   
+        await this.client.sendMessage(msg.from, 'Me avisa quando enviar o pix, que te dou o meu melhor conteúdo e me solto de verdade pra vc… e ainda te mostro tudo sem censura😈');
         this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_before_audiofinal');
     }
 
     async processarRespostaUsuarioBeforeAudiofinal(idUsuario, msg, chat) {
         const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         this.gerenciadorEstado.marcarMensagemEnviada(idUsuario, 'waiting_before_audiofinal');
-        // Registrar o tipo de mensagem recebida
         this.logger.info(`Usuário ${idUsuario} respondeu com tipo: ${msg.type}`);
-        // Avançar para o próximo estado, independentemente do tipo de mensagem
         this.logger.info(`Usuário ${idUsuario} respondeu. Avançando para o estado waiting_after_audiofinal`);
         this.gerenciadorEstado.definirEstadoUsuario(idUsuario, 'waiting_after_audiofinal');
         await this.processarProximoEstagio(idUsuario, msg, 'waiting_after_audiofinal');
@@ -484,53 +533,9 @@ class WhatsAppBot {
         await this.client.sendMessage(msg.from, 'Tá em dúvida ainda bb? Olha o que os pagantes falam…');
         await delay(15000);
         await this.gerenciadorMidia.enviarMidia(this.client, msg, './foto1.jpg', { sendMediaAsPhoto: true });
-        // Finalizar a conversa aqui
         this.gerenciadorEstado.finalizarConversa(idUsuario);
         this.gerenciadorEstado.limparEstadoUsuario(idUsuario);
         this.logger.info(`Conversa finalizada para o usuário ${idUsuario}`);
-    }
-
-    async responderSobreEncontro(msg) {
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms)); // Função de delay
-        const chat = await msg.getChat();
-        await chat.sendStateTyping(); // Envia o estado de "digitando..."
-        await delay(config.delays.digitacao); // Aguarda o tempo de digitação configurado (11 segundos)
-        await delay(15000);
-        await this.client.sendMessage(
-            msg.from,
-            'Amor... encontro não rola. Sou tua namoradinha virtual, só na putaria online 😘\n' +
-            'Mas te garanto que numa chamada vou te deixar tão maluco que nem vai querer sair de casa 🤤'
-        );
-        this.logger.info(`Resposta sobre encontro enviada para ${msg.from}`);
-
-        // Retomar o estado anterior do funil
-        const idUsuario = msg.from;
-        const estadoAtual = this.gerenciadorEstado.obterEstadoUsuario(idUsuario);
-        if (estadoAtual) {
-            await this.processarProximoEstagio(idUsuario, msg, estadoAtual);
-        }
-    }
-
-    async tentarReconexao(motivo) {
-        let tentativas = 0;
-        const maxTentativas = config.limites.tentativasReconexao;
-        while (tentativas < maxTentativas) {
-            try {
-                this.logger.info(`Tentativa de reconexão ${tentativas + 1}/${maxTentativas}`);
-                await this.client.initialize();
-                this.logger.info('Reconectado com sucesso');
-                return;
-            } catch (erro) {
-                tentativas++;
-                this.logger.error(`Falha na tentativa de reconexão ${tentativas}:`, erro);
-                if (tentativas < maxTentativas) {
-                    const tempoEspera = 5000 * tentativas;
-                    await new Promise(resolve => setTimeout(resolve, tempoEspera));
-                }
-            }
-        }
-        this.logger.error('Máximo de tentativas de reconexão atingido. Reiniciando processo...');
-        process.exit(1);
     }
 }
 
